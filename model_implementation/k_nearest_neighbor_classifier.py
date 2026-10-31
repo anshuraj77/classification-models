@@ -109,9 +109,10 @@ class KNearestNeighborModel:
     # Data
     # ------------------------------------------------------------------
 
-    def load_data(self) -> None:
+    def load_data(self, file_path: str | None = None) -> None:
         """
         Load and preprocess the dataset using the shared data service.
+        Optionally, pass a CSV path instead of using the default dataset.
 
         After this call, self.data will contain:
             - X_train, X_test  : Feature matrices (numpy arrays)
@@ -123,6 +124,7 @@ class KNearestNeighborModel:
         self.data = get_preprocessed_data(
             test_size=self.test_size,
             scale_features=self.scale_features,
+            **({"file_path": file_path} if file_path is not None else {}),
         )
 
     # ------------------------------------------------------------------

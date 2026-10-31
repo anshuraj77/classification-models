@@ -50,15 +50,15 @@ class DecisionTreeModel:
     """
 
     def __init__(
-        self,
-        criterion: str = "gini",
-        max_depth: int | None = None,
-        min_samples_split: int = 2,
-        min_samples_leaf: int = 1,
-        max_features: str | int | float | None = None,
-        random_state: int = 42,
-        test_size: float = 0.2,
-        scale_features: bool = False,
+            self,
+            criterion: str = "gini",
+            max_depth: int | None = None,
+            min_samples_split: int = 2,
+            min_samples_leaf: int = 1,
+            max_features: str | int | float | None = None,
+            random_state: int = 42,
+            test_size: float = 0.2,
+            scale_features: bool = False,
     ) -> None:
         """
         Initialise the Decision Tree model.
@@ -107,9 +107,10 @@ class DecisionTreeModel:
     # Data
     # ------------------------------------------------------------------
 
-    def load_data(self) -> None:
+    def load_data(self, file_path: str | None = None) -> None:
         """
         Load and preprocess the dataset using the shared data service.
+        Optionally, pass a CSV path instead of using the default dataset.
 
         After this call, self.data will contain:
             - X_train, X_test  : Feature matrices (numpy arrays)
@@ -121,6 +122,7 @@ class DecisionTreeModel:
         self.data = get_preprocessed_data(
             test_size=self.test_size,
             scale_features=self.scale_features,
+            **({"file_path": file_path} if file_path is not None else {}),
         )
 
     # ------------------------------------------------------------------
@@ -253,7 +255,7 @@ class DecisionTreeModel:
         if not self.is_trained:
             raise RuntimeError("Call fit() before get_feature_importances().")
 
-        feature_names = self.data["feature_names"]
+        feature_names = self.data["model_feature_names"]
         importances = self.model.feature_importances_
 
         return dict(

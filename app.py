@@ -64,7 +64,7 @@ def evaluate_model(
     model: Any,
     metadata: dict[str, Any],
     dataset: pd.DataFrame,
-) -> tuple[dict[str, float], pd.DataFrame, pd.DataFrame]:
+) -> tuple[dict[str, float], pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     feature_names = get_feature_names(model, metadata)
     if not feature_names:
         raise ValueError(
@@ -115,6 +115,14 @@ def evaluate_model(
         class_labels = pd.unique(np.concatenate([np.asarray(y_true), y_pred])).tolist()
         class_names = [str(label) for label in class_labels]
 
+    predicted_labels = (
+        metadata["label_encoder"].inverse_transform(y_pred)
+        if "label_encoder" in metadata
+        else y_pred
+    )
+    prediction_table = dataset.copy()
+    prediction_table[f"Predicted {target_column}"] = predicted_labels
+
     metrics = {
         "Accuracy": accuracy_score(y_true, y_pred),
         "Weighted precision": precision_score(y_true, y_pred, average="weighted", zero_division=0),
@@ -138,7 +146,7 @@ def evaluate_model(
         index=pd.Index(class_names, name="Actual"),
         columns=pd.Index(class_names, name="Predicted"),
     )
-    return metrics, confusion_table, report_table
+    return metrics, confusion_table, report_table, prediction_table
 
 
 def main() -> None:
@@ -189,7 +197,9 @@ def main() -> None:
 
     st.caption(f"Loaded {len(dataset):,} test rows.")
     comparison: list[dict[str, Any]] = []
-    details: dict[str, tuple[dict[str, float], pd.DataFrame, pd.DataFrame]] = {}
+    details: dict[
+        str, tuple[dict[str, float], pd.DataFrame, pd.DataFrame, pd.DataFrame]
+    ] = {}
     failures: list[tuple[str, str]] = []
 
     for path in model_paths:
@@ -197,7 +207,7 @@ def main() -> None:
             artifact = load_artifact(str(path), path.stat().st_mtime)
             model, metadata = unpack_artifact(artifact)
             result = evaluate_model(model, metadata, dataset)
-            metrics, confusion_table, report_table = result
+            metrics, confusion_table, report_table, _ = result
             details[path.name] = result
             comparison.append({"Model": path.stem, **metrics})
         except (
@@ -219,12 +229,26 @@ def main() -> None:
             use_container_width=True,
         )
         selected_model = st.selectbox("Inspect model results", list(details))
-        metrics, confusion_table, report_table = details[selected_model]
+        metrics, confusion_table, report_table, prediction_table = details[
+            selected_model
+        ]
 
         st.subheader(f"{Path(selected_model).stem} details")
         metric_columns = st.columns(len(metrics))
         for column, (name, value) in zip(metric_columns, metrics.items()):
             column.metric(name, f"{value:.4f}")
+
+        st.subheader("Predictions")
+        st.caption(
+            "Uploaded rows with the selected model's predicted target. "
+            "Scroll within the table to inspect all rows."
+        )
+        st.dataframe(
+            prediction_table,
+            height=400,
+            use_container_width=True,
+            hide_index=True,
+        )
 
         confusion_tab, report_tab = st.tabs(["Confusion matrix", "Classification report"])
         with confusion_tab:

@@ -18,6 +18,27 @@ the target column `sleep_debt_category` and every input feature expected by
 each model. A model artifact can override the target column by providing
 metadata.
 
+Train all supported models offline with:
+
+```bash
+python train_model.py
+```
+
+Train only one model by passing its name to `--model`:
+
+```bash
+python train_model.py --model decision_tree
+```
+
+Supported names are `decision_tree`, `gaussian_naive_bayes`,
+`k_nearest_neighbors`, `logistic_regression`, and `support_vector_machine`.
+Use `--model-dir` to choose where artifacts are saved; it does not select
+which model is trained. Training dispatches to the selected class in
+`model_implementation`, calls its `fit()` and `evaluate()` methods, and saves
+the fitted estimator together with the preprocessing state needed for inference.
+Categorical inputs are one-hot encoded using categories learned from training
+rows only; continuous numeric features are scaled using training rows only.
+
 For reliable inference, save a fitted scikit-learn estimator or `Pipeline`
 that includes all preprocessing learned from the training data. A Pipeline
 fitted with a pandas DataFrame exposes its expected feature names automatically.

@@ -50,13 +50,13 @@ class LogisticRegressionModel:
     """
 
     def __init__(
-        self,
-        C: float = 1.0,
-        max_iter: int = 1000,
-        solver: str = "lbfgs",
-        random_state: int = 42,
-        test_size: float = 0.2,
-        scale_features: bool = True,
+            self,
+            C: float = 1.0,
+            max_iter: int = 1000,
+            solver: str = "lbfgs",
+            random_state: int = 42,
+            test_size: float = 0.2,
+            scale_features: bool = True,
     ) -> None:
         """
         Initialise the Logistic Regression model.
@@ -98,9 +98,10 @@ class LogisticRegressionModel:
     # Data
     # ------------------------------------------------------------------
 
-    def load_data(self) -> None:
+    def load_data(self, file_path: str | None = None) -> None:
         """
         Load and preprocess the dataset using the shared data service.
+        Optionally, pass a CSV path instead of using the default dataset.
 
         After this call, self.data will contain:
             - X_train, X_test  : Feature matrices (numpy arrays)
@@ -112,6 +113,7 @@ class LogisticRegressionModel:
         self.data = get_preprocessed_data(
             test_size=self.test_size,
             scale_features=self.scale_features,
+            **({"file_path": file_path} if file_path is not None else {}),
         )
 
     # ------------------------------------------------------------------
@@ -242,7 +244,7 @@ class LogisticRegressionModel:
             raise RuntimeError("Call fit() before get_coefficients().")
 
         le = self.data["label_encoder"]
-        feature_names = self.data["feature_names"]
+        feature_names = self.data["model_feature_names"]
         class_names = le.inverse_transform(self.model.classes_).tolist()
 
         coefficients = {
